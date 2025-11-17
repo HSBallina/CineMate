@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenAI.Chat;
 using System.Net.Http;
 using System.Text.Json;
+using TMDbLib.Client;
 
 namespace CineMate.Controllers;
 
@@ -42,13 +43,12 @@ public class MovieController(IHttpClientFactory httpClientFactory, ApiSettings s
             PresencePenalty = (float)0,
         });
 
-        var gptSuggestion = response.Value.Content[0].Text.Trim();
+        var movieSuggestions = JsonSerializer
+            .Deserialize<List<GptMovie>>(response.Value.Content[0].Text.Trim());
 
-        var movieSuggestions = JsonSerializer.Deserialize<List<GptMovie>>(gptSuggestion);
+        TMDbClient tMDbClient = new(settings.TmdbApiKey);
 
-        //// 3. Call TMDb API for real data
-        //var tmdbResponse = await _httpClient.GetStringAsync(
-        //    $"https://api.themoviedb.org/3/search/movie?query={Uri.EscapeDataString(gptSuggestion)}&api_key=YOUR-TMDB-KEY");
+        var tmdbResults = await tMDbClient.SearchMovieAsync(movieSuggestions!.First().Title, primaryReleaseYear: movieSuggestions!.First().Year);
 
         //var movieData = System.Text.Json.JsonSerializer.Deserialize<TmdbSearchResult>(tmdbResponse);
 
@@ -60,7 +60,7 @@ public class MovieController(IHttpClientFactory httpClientFactory, ApiSettings s
         //    Tagline = $"Perfect for a {prefs.Mood} night!"
         //};
 
-        return Ok(movieSuggestions);
+        return Ok(tmdbResults);
 
     }
 }
