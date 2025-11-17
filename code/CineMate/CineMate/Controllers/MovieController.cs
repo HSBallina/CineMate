@@ -21,13 +21,19 @@ public class MovieController(IHttpClientFactory httpClientFactory, ApiSettings s
     [HttpPost("recommend")]
     public async Task<IActionResult> RecommendMovie([FromBody] UserPreferences prefs)
     {
+        var userChatMessage =
+            $"Suggest up to six movies based on these preferences; Genre: {prefs.Genre}, Mood: {prefs.Mood}, Actor: {prefs.Actor}. " +
+            "Return the result strictly as JSON in this format: " +
+            "[ { \"title\": \"Movie Title\", \"year\": 1999 }, " +
+            "{ \"title\": \"Another Movie\", \"year\": 2010 } ] " +
+            "Do not include any extra text or explanation.";
+
         var chatClient = _openAiClient.GetChatClient("gpt-5.1-chat");
         var messages = new List<ChatMessage>
         {
             new SystemChatMessage("You are CineMate, an AI movie recommendation assistant."),
-            new UserChatMessage($"Suggest up to 6 movies for Genre: {prefs.Genre}, Mood: {prefs.Mood}, Actor: {prefs.Actor}. Include a fun tagline.")
+            new UserChatMessage(userChatMessage)
         };
-
 
         var response = await chatClient.CompleteChatAsync(messages, new ChatCompletionOptions()
         {
@@ -35,8 +41,10 @@ public class MovieController(IHttpClientFactory httpClientFactory, ApiSettings s
             FrequencyPenalty = (float)0,
             PresencePenalty = (float)0,
         });
-        var chatResponse = response.Value.Content.Last().Text;
-        //var gptSuggestion = response.Value.Choices[0].Message.Content.Trim();
+
+        var gptSuggestion = response.Value.Content[0].Text.Trim();
+
+        var movieSuggestions = JsonSerializer.Deserialize<List<GptMovie>>(gptSuggestion);
 
         //// 3. Call TMDb API for real data
         //var tmdbResponse = await _httpClient.GetStringAsync(
@@ -52,7 +60,7 @@ public class MovieController(IHttpClientFactory httpClientFactory, ApiSettings s
         //    Tagline = $"Perfect for a {prefs.Mood} night!"
         //};
 
-        return Ok(response);
+        return Ok(movieSuggestions);
 
     }
 }
