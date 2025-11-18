@@ -45,18 +45,19 @@ public class MovieController(ITmdb tmdb, ApiSettings settings) : ControllerBase
         var gptMovies = JsonSerializer
             .Deserialize<List<GptMovie>>(response.Value.Content[0].Text.Trim());
 
-        var tmdbMovie = await tmdb.GetMovie(gptMovies![0]);
-        //var movieData = System.Text.Json.JsonSerializer.Deserialize<TmdbSearchResult>(tmdbResponse);
+        if (gptMovies is null || gptMovies.Count == 0)
+        {
+            return NotFound("No movie recommendations could be generated.");
+        }
 
-        //var result = new
-        //{
-        //    SuggestedMovie = gptSuggestion,
-        //    Poster = $"https://image.tmdb.org/t/p/w500{movieData?.Results?.FirstOrDefault()?.PosterPath}",
-        //    Rating = movieData?.Results?.FirstOrDefault()?.VoteAverage,
-        //    Tagline = $"Perfect for a {prefs.Mood} night!"
-        //};
+        var movies = gptMovies
+            .Select(async gm => await tmdb.GetMovie(gm))
+            .Where(tm => tm is not null)
+            .Select(t => t.Result)
+            .ToList();
 
-        return Ok(tmdbMovie);
-
+        return movies.Count > 0
+            ? Ok(movies)
+            : NotFound("No movie recommendations could be generated.");
     }
 }
