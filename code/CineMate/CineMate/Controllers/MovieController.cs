@@ -2,9 +2,9 @@
 using Azure.AI.OpenAI;
 using CineMate.Configuration;
 using CineMate.Models;
+using CineMate.Tmdb;
 using Microsoft.AspNetCore.Mvc;
 using OpenAI.Chat;
-using System.Net.Http;
 using System.Text.Json;
 using TMDbLib.Client;
 
@@ -12,9 +12,8 @@ namespace CineMate.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class MovieController(IHttpClientFactory httpClientFactory, ApiSettings settings) : ControllerBase
+public class MovieController(ITmdb tmdb, ApiSettings settings) : ControllerBase
 {
-    private readonly HttpClient _httpClient = httpClientFactory.CreateClient();
     private readonly AzureOpenAIClient _openAiClient = new(
         new Uri(settings.OpenAiEndpoint),
         new AzureKeyCredential(settings.OpenAiKey));
@@ -43,13 +42,10 @@ public class MovieController(IHttpClientFactory httpClientFactory, ApiSettings s
             PresencePenalty = (float)0,
         });
 
-        var movieSuggestions = JsonSerializer
+        var gptMovies = JsonSerializer
             .Deserialize<List<GptMovie>>(response.Value.Content[0].Text.Trim());
 
-        TMDbClient tMDbClient = new(settings.TmdbApiKey);
-
-        var tmdbResults = await tMDbClient.SearchMovieAsync(movieSuggestions!.First().Title, primaryReleaseYear: movieSuggestions!.First().Year);
-
+        var tmdbMovie = await tmdb.GetMovie(gptMovies![0]);
         //var movieData = System.Text.Json.JsonSerializer.Deserialize<TmdbSearchResult>(tmdbResponse);
 
         //var result = new
@@ -60,7 +56,7 @@ public class MovieController(IHttpClientFactory httpClientFactory, ApiSettings s
         //    Tagline = $"Perfect for a {prefs.Mood} night!"
         //};
 
-        return Ok(tmdbResults);
+        return Ok(tmdbMovie);
 
     }
 }
