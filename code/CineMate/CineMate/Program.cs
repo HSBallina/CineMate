@@ -17,6 +17,8 @@ builder.Services.AddHttpClient();
 ApiSettings apiSettings = new();
 builder.Configuration.GetSection("ApiSettings").Bind(apiSettings);
 builder.Services.AddSingleton(apiSettings);
+builder.Services.AddScoped<CineMate.Tmdb.ITmdb, CineMate.Tmdb.Tmdb>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
