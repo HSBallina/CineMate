@@ -4,5 +4,5 @@ namespace CineMate.Tmdb;
 
 public interface ITmdb
 {
-    public Task<TmdbMovie> GetMovie(GptMovie gptMovie);
+    public Task<TmdbMovie?> GetMovie(GptMovie gptMovie);
 }
