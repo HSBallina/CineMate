@@ -6,8 +6,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder
     .Configuration.SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false)
-    .AddUserSecrets("05e6dfde-36ac-4746-b349-584137f8e836");
+    .AddUserSecrets("05e6dfde-36ac-4746-b349-584137f8e836")
+    .AddEnvironmentVariables();
 
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("All", policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddControllers();
 
@@ -31,6 +42,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("All");
 
 app.UseAuthorization();
 
