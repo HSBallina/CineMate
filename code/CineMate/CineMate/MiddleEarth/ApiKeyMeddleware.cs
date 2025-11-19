@@ -9,6 +9,13 @@ public class ApiKeyMiddleware(RequestDelegate next)
 
     public async Task InvokeAsync(HttpContext context, ApiSettings settings)
     {
+
+        if (context.Request.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode = StatusCodes.Status204NoContent;
+            return;
+        }
+
         if (!context.Request.Headers.TryGetValue(ApiKeyHeaderName, out var extractedApiKey) ||
             extractedApiKey != settings.ApiKey)
         {
