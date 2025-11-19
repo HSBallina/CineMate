@@ -2,3 +2,6 @@
 **/.vs/
 **/obj/
 **/bin/
+**/Properties/PublishProfiles
+**/CineMate/Properties/ServiceDependencies/*
+**/CineMate/CineMate.csproj.user
